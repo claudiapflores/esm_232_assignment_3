@@ -1,0 +1,86 @@
+---
+title: "Sensitivity Analysis"
+author: "Claudia Flores, Haley Grant, Shuhan Song"
+date: "4/16/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE, 
+                      message = FALSE)
+```
+
+```{r}
+## Read in packages
+library(tidyverse)
+library(janitor)
+library(patchwork)
+library(purrr)
+```
+
+```{r}
+## Read in data file 'clim.txt'
+climate <- read_table2("data/clim.txt") %>% 
+  clean_names() # Clean up column names in climate data frame
+```
+
+```{r}
+## Aggregating climate data
+
+# Aggregate daily climate data frame into yearly and monthly averages for minimum and maximum temperature observations and sum for precipitation
+climate_averages <- climate %>% 
+# Grouping the same years and months observations within the year and month column to have results separated out into monthly and yearly results
+  group_by(month,year) %>% 
+  summarise(
+    avg_tmax_c = mean(tmax_c), # Finding the average for maximum temperature
+    avg_tmin_c = mean(tmin_c), # Finding the average for minimum temperature
+    sum_precip = sum(precip) # Finding the sum for precipitation 
+  )
+
+# precipitation averages for first month (P_1)
+climate_averages_1 <- climate_averages %>% 
+  filter(month == 1) %>% # Filtering the first month for each year
+  select(-avg_tmin_c) %>% # Removing the column named avg_tmin_c
+  select(-avg_tmax_c) # Removing the column named avg_tmax_c
+
+# minimum temperature averages for second month (Tn_2)
+climate_averages_2 <- climate_averages %>% 
+  filter(month == 2) %>% # Filtering the first month for each year
+  select(year,avg_tmin_c,month) # Keep only two columns: year and avg_tmin_c
+
+# combine the 2 previous data sets
+climate_averages_3 <- merge(climate_averages_1,climate_averages_2, by = "year") 
+```
+
+```{r}
+## Source almond_model.R function into RMarkdown
+source("R/almond_model.R")
+```
+
+```{r}
+# Sampling for sensitivity analysis
+
+# how many simulations
+number_runs = 500
+# generate data with normal distribution
+P_1_2_coeff <- rnorm(mean=0.0043, sd=0.001, n=number_runs)
+
+# Run the model with the data we created along with inputs
+res = map_dfc(P_1_2_coeff, almond_model, Tn_2 = climate_averages_3$avg_tmin_c, P_1 = climate_averages_3$sum_precip)
+# set column names to actual values
+colnames(res) = P_1_2_coeff
+res = res %>% 
+  mutate(year = climate_averages_3$year) # add year column
+
+# rearrange to plot
+resg = as.data.frame(res) %>% 
+  pivot_longer(!year, names_to = "P_1_2_coeff", values_to = "yield_anomaly")
+
+# merge dataframes
+resg_merge = merge(resg, climate_averages_3) %>% 
+  filter(year == "1989")
+```
+
