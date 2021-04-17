@@ -63,23 +63,32 @@ source("R/almond_model.R")
 ```{r}
 # Sampling for sensitivity analysis
 
-# how many simulations
+# How many simulations
 number_runs = 500
 # generate data with normal distribution
 P_1_2_coeff <- rnorm(mean=0.0043, sd=0.001, n=number_runs)
 
 # Run the model with the data we created along with inputs
-res = map_dfc(P_1_2_coeff, almond_model, Tn_2 = climate_averages_3$avg_tmin_c, P_1 = climate_averages_3$sum_precip)
-# set column names to actual values
+# Use map_dfc to run for each value of P_1_2_coeff - where we get results for all Tn_2 and P_1 for each P_1_2_coeff value
+res = map_dfc(P_1_2_coeff, 
+              almond_model, # function
+              Tn_2 = climate_averages_3$avg_tmin_c, # input
+              P_1 = climate_averages_3$sum_precip) # input
+
+# Set column names to actual values
 colnames(res) = P_1_2_coeff
-res = res %>% 
-  mutate(year = climate_averages_3$year) # add year column
 
-# rearrange to plot
-resg = as.data.frame(res) %>% 
-  pivot_longer(!year, names_to = "P_1_2_coeff", values_to = "yield_anomaly")
+# Add year column starting with years 1989 to 2010
+res <- res %>% 
+  mutate(year = climate_averages_3$year) # years based of original data clim.txt 
 
-# merge dataframes
+# Rearrange using pivot function to plot
+resg = as.data.frame(res) %>% # calling data frame
+  pivot_longer(!year, # do not use column year to pivot
+               names_to = "P_1_2_coeff", 
+               values_to = "yield_anomaly") 
+
+# Merge data frames
 resg_merge = merge(resg, climate_averages_3) %>% 
   filter(year == "1989")
 ```
