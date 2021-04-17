@@ -89,7 +89,6 @@ resg = as.data.frame(res) %>% # calling data frame
                values_to = "yield_anomaly") 
 
 # Merge data frames
-resg_merge = merge(resg, climate_averages_3) %>% 
-  filter(year == "1989")
+resg_merge = merge(resg, climate_averages_3) 
 ```
 
