@@ -70,10 +70,10 @@ P_1_2_coeff <- rnorm(mean=0.0043, sd=0.001, n=number_runs)
 
 # Run the model with the data we created along with inputs
 # Use map_dfc to run for each value of P_1_2_coeff - where we get results for all Tn_2 and P_1 for each P_1_2_coeff value
-res = map_dfc(P_1_2_coeff, 
-              almond_model, # function
-              Tn_2 = climate_averages_3$avg_tmin_c, # input
-              P_1 = climate_averages_3$sum_precip) # input
+res = P_1_2_coeff %>% map_dfc(~almond_model(Tn_2 = climate_averages_3$avg_tmin_c, # input
+                                        P_1 = climate_averages_3$sum_precip,
+                                        P_1_2_coeff = .x) # function
+                          ) # input
 
 # Set column names to actual values
 colnames(res) = P_1_2_coeff
@@ -89,6 +89,22 @@ resg = as.data.frame(res) %>% # calling data frame
                values_to = "yield_anomaly") 
 
 # Merge data frames
-resg_merge = merge(resg, climate_averages_3) 
+resg_merge = merge(resg, climate_averages_3) %>% 
+  rename(sum_precip_month1 = sum_precip,
+         avg_tmin_month2_c = avg_tmin_c) %>% 
+  select(-month.x, -month.y)
+```
+
+```{r}
+# box plot shows yield anomoly by year
+
+ggplot(data = resg_merge,
+       aes(x = as.factor(year), 
+           y = yield_anomaly)) +
+  geom_boxplot() +
+  labs(x = "Year",
+       y = "Yield Anomaly (tons/acre)",
+       title = "Sensitivity analysis of almond yield to the second degree of January precipitation") +
+  theme_minimal()
 ```
 
