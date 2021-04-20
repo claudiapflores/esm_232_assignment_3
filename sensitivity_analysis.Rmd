@@ -61,7 +61,7 @@ source("R/almond_model.R")
 ```
 
 ```{r}
-# Sampling for sensitivity analysis
+## Sampling for sensitivity analysis
 
 # How many simulations
 number_runs = 500
@@ -86,7 +86,7 @@ res <- res %>%
 resg = as.data.frame(res) %>% # calling data frame
   pivot_longer(!year, # do not use column year to pivot
                names_to = "P_1_2_coeff", 
-               values_to = "yield_anomaly") 
+               values_to = "yield_anomaly_tons_per_acre") 
 
 # Merge data frames
 resg_merge = merge(resg, climate_averages_3) %>% 
@@ -96,15 +96,52 @@ resg_merge = merge(resg, climate_averages_3) %>%
 ```
 
 ```{r}
-# box plot shows yield anomoly by year
+## Box plot 
 
+# Graph shows yield anomaly by year
 ggplot(data = resg_merge,
        aes(x = as.factor(year), 
-           y = yield_anomaly)) +
+           y = yield_anomaly_tons_per_acre)) +
   geom_boxplot() +
   labs(x = "Year",
        y = "Yield Anomaly (tons/acre)",
        title = "Sensitivity analysis of almond yield to the second degree of January precipitation") +
   theme_minimal()
+```
+```{r}
+## Source almond_model.R function into RMarkdown
+source("R/compute_NPV.R")
+```
+
+```{r}
+## Assumptions and Conversion and NPV
+
+# Assumptions
+
+# Almond production costs $3800/acre
+almond_production_costs = 3800
+
+# Almond profit is $2.50/lb
+# Convert 1 lb into metric tons
+# 1 Pound = 0.00045359237 Metric Tons
+almond_profit = 2.50 * (1/0.00045359237)
+almond_profit # $ per metric tons
+
+# Almond production on average is 1 ton/acre/yr
+
+# NPV
+resg_merge_net_profit <- resg_merge %>% 
+  mutate(almond_production_costs = resg_merge$yield_anomaly_tons_per_acre * almond_production_costs) %>% # calculate production costs by multiplying yield anomaly to almond production costs
+  mutate(almond_profit = resg_merge$yield_anomaly_tons_per_acre * almond_profit) %>% # calculate almond profit by multiplying yield anomaly to almond profit 
+  mutate(net_profit = almond_profit - almond_production_costs) # calculate net profit by subtracting almond profit to almond production costs
+
+# Use compute_NPV.R function to find NPV for each year
+NPV = compute_NPV(resg_merge_net_profit$net_profit,resg_merge_net_profit$year)
+head(NPV) # call up the first 5 values of NPV calculations 
+
+# Add NPV values from above to resg_merge_NPV data frame
+resg_merge_NPV <- resg_merge_net_profit %>% 
+  mutate(NPV = NPV) # add NPV column 
+
 ```
 
