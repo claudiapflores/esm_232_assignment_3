@@ -107,6 +107,8 @@ ggplot(data = resg_merge,
        y = "Yield Anomaly (tons/acre)",
        title = "Sensitivity analysis of almond yield to the second degree of January precipitation") +
   theme_minimal()
+
+ggsave("sens_analysis_boxplot.png") # save boxplot image
 ```
 ```{r}
 ## Source almond_model.R function into RMarkdown
@@ -135,7 +137,7 @@ resg_merge_anom_avg <- resg_merge %>%
   mutate(anom_plus_avg_yield = resg_merge$yield_anomaly_tons_per_acre + almond_production_avg) # add average of 1 ton/acre/yr to anomaly
 
 resg_merge_net_profit <- resg_merge_anom_avg %>% 
-  mutate(almond_production_costs = almond_production_costs) %>% # USe production costs of $3800 per acre
+  mutate(almond_production_costs = almond_production_costs) %>% # USe production costs of $3800 per acre for all years
   mutate(almond_profit = resg_merge_anom_avg$anom_plus_avg_yield * almond_profit) %>% # calculate almond profit by multiplying yield anomaly to almond profit 
   mutate(net_profit = almond_profit - almond_production_costs) # calculate net profit by subtracting almond profit to almond production costs
 
@@ -161,4 +163,6 @@ ggplot(data = resg_merge_NPV,
        y = "NPV ($/acre)",
        title = "Sensitivity analysis of NPV to the second degree of January precipitation") +
   theme_minimal()
+
+ggsave("NPV_boxplot.png") # save boxplot image
 ```
