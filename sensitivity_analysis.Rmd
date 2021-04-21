@@ -140,7 +140,7 @@ resg_merge_net_profit <- resg_merge_anom_avg %>%
   mutate(net_profit = almond_profit - almond_production_costs) # calculate net profit by subtracting almond profit to almond production costs
 
 # Use compute_NPV.R function to find NPV for each year
-NPV = compute_NPV(resg_merge_net_profit$net_profit,22) # 22 is number of years
+NPV = compute_NPV(resg_merge_net_profit$net_profit, time = (resg_merge_net_profit$year-min(resg_merge_net_profit$year))) # discount net profit to year 1989
 head(NPV) # call up the first 5 values of NPV calculations 
 
 # Add NPV values from above to resg_merge_NPV data frame
@@ -149,3 +149,16 @@ resg_merge_NPV <- resg_merge_net_profit %>%
 
 ```
 
+```{r}
+## Box plot 
+
+# Graph shows yield anomaly by year
+ggplot(data = resg_merge_NPV,
+       aes(x = as.factor(year), 
+           y = NPV)) +
+  geom_boxplot() +
+  labs(x = "Year",
+       y = "NPV ($/acre)",
+       title = "Sensitivity analysis of NPV to the second degree of January precipitation") +
+  theme_minimal()
+```
