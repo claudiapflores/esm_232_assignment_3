@@ -128,20 +128,24 @@ almond_profit = 2.50 * (1/0.00045359237)
 almond_profit # $ per metric tons
 
 # Almond production on average is 1 ton/acre/yr
+almond_production_avg = 1
 
 # NPV
-resg_merge_net_profit <- resg_merge %>% 
-  mutate(almond_production_costs = resg_merge$yield_anomaly_tons_per_acre * almond_production_costs) %>% # calculate production costs by multiplying yield anomaly to almond production costs
-  mutate(almond_profit = resg_merge$yield_anomaly_tons_per_acre * almond_profit) %>% # calculate almond profit by multiplying yield anomaly to almond profit 
+resg_merge_anom_avg <- resg_merge %>% 
+  mutate(anom_plus_avg_yield = resg_merge$yield_anomaly_tons_per_acre + almond_production_avg) # add average of 1 ton/acre/yr to anomaly
+
+resg_merge_net_profit <- resg_merge_anom_avg %>% 
+  mutate(almond_production_costs = almond_production_costs) %>% # USe production costs of $3800 per acre
+  mutate(almond_profit = resg_merge_anom_avg$anom_plus_avg_yield * almond_profit) %>% # calculate almond profit by multiplying yield anomaly to almond profit 
   mutate(net_profit = almond_profit - almond_production_costs) # calculate net profit by subtracting almond profit to almond production costs
 
 # Use compute_NPV.R function to find NPV for each year
-NPV = compute_NPV(resg_merge_net_profit$net_profit,resg_merge_net_profit$year)
+NPV = compute_NPV(resg_merge_net_profit$net_profit,22) # 22 is number of years
 head(NPV) # call up the first 5 values of NPV calculations 
 
 # Add NPV values from above to resg_merge_NPV data frame
 resg_merge_NPV <- resg_merge_net_profit %>% 
-  mutate(NPV = NPV) # add NPV column 
+  mutate(NPV = NPV) # add NPV column using NPV values calculated from compute_NPV.R function
 
 ```
 
